@@ -17,7 +17,7 @@ interface Message {
 export const ChatAssistant: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     { 
-      text: "Hello! I'm your CivicSync Assistant. What would you like to know about the election process?", 
+      text: "Namaskar! I'm your CivicSync Assistant for Indian elections. Ask me about voter registration (Form 6), EPIC card, polling booth location, EVM voting, or anything about India's election process!", 
       isUser: false,
       timestamp: new Date().toLocaleTimeString()
     }

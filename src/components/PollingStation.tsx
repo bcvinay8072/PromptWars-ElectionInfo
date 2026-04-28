@@ -1,51 +1,88 @@
-import React, { useState, useEffect } from 'react';
-import { Map, Search, MapPin, AlertCircle, ExternalLink, Calendar } from 'lucide-react';
-import { fetchElections, fetchVoterInfo, ElectionInfo } from '../lib/civicApi';
+import React, { useState } from 'react';
+import { Map, Search, MapPin, ExternalLink, Phone, Smartphone, Globe } from 'lucide-react';
+
+// India-specific election resources
+const ECI_RESOURCES = [
+  {
+    name: "National Voters' Service Portal (NVSP)",
+    url: "https://www.nvsp.in/",
+    description: "Register to vote, check electoral roll, track applications",
+    icon: <Globe size={16} aria-hidden="true" />
+  },
+  {
+    name: "Voter Helpline App",
+    url: "https://play.google.com/store/apps/details?id=com.eci.citizen",
+    description: "Official ECI app for booth search, voter ID, and complaints",
+    icon: <Smartphone size={16} aria-hidden="true" />
+  },
+  {
+    name: "Election Commission of India",
+    url: "https://www.eci.gov.in/",
+    description: "Official ECI website for election schedules and results",
+    icon: <Globe size={16} aria-hidden="true" />
+  },
+  {
+    name: "Voter Helpline: 1950",
+    url: "tel:1950",
+    description: "Call or SMS your EPIC number to 1950 for booth details",
+    icon: <Phone size={16} aria-hidden="true" />
+  }
+];
+
+// Indian state CEO (Chief Electoral Officer) websites
+const STATE_CEO_MAP: Record<string, { name: string; url: string }> = {
+  "andhra pradesh": { name: "CEO Andhra Pradesh", url: "https://ceoandhra.nic.in/" },
+  "arunachal pradesh": { name: "CEO Arunachal Pradesh", url: "https://ceoarunachal.nic.in/" },
+  "assam": { name: "CEO Assam", url: "https://ceoassam.nic.in/" },
+  "bihar": { name: "CEO Bihar", url: "https://ceobihar.nic.in/" },
+  "chhattisgarh": { name: "CEO Chhattisgarh", url: "https://ceochhattisgarh.nic.in/" },
+  "delhi": { name: "CEO Delhi", url: "https://ceodelhi.gov.in/" },
+  "goa": { name: "CEO Goa", url: "https://ceogoa.nic.in/" },
+  "gujarat": { name: "CEO Gujarat", url: "https://ceo.gujarat.gov.in/" },
+  "haryana": { name: "CEO Haryana", url: "https://ceoharyana.gov.in/" },
+  "himachal pradesh": { name: "CEO Himachal Pradesh", url: "https://ceohimachal.nic.in/" },
+  "jharkhand": { name: "CEO Jharkhand", url: "https://ceojharkhand.nic.in/" },
+  "karnataka": { name: "CEO Karnataka", url: "https://ceokarnataka.kar.nic.in/" },
+  "kerala": { name: "CEO Kerala", url: "https://ceo.kerala.gov.in/" },
+  "madhya pradesh": { name: "CEO Madhya Pradesh", url: "https://ceomadhyapradesh.nic.in/" },
+  "maharashtra": { name: "CEO Maharashtra", url: "https://ceo.maharashtra.gov.in/" },
+  "manipur": { name: "CEO Manipur", url: "https://ceomanipur.nic.in/" },
+  "meghalaya": { name: "CEO Meghalaya", url: "https://ceomeghalaya.nic.in/" },
+  "mizoram": { name: "CEO Mizoram", url: "https://ceomizoram.nic.in/" },
+  "nagaland": { name: "CEO Nagaland", url: "https://ceonagaland.nic.in/" },
+  "odisha": { name: "CEO Odisha", url: "https://ceoodisha.nic.in/" },
+  "punjab": { name: "CEO Punjab", url: "https://ceopunjab.nic.in/" },
+  "rajasthan": { name: "CEO Rajasthan", url: "https://ceorajasthan.nic.in/" },
+  "sikkim": { name: "CEO Sikkim", url: "https://ceosikkim.nic.in/" },
+  "tamil nadu": { name: "CEO Tamil Nadu", url: "https://www.elections.tn.gov.in/" },
+  "telangana": { name: "CEO Telangana", url: "https://ceotelangana.nic.in/" },
+  "tripura": { name: "CEO Tripura", url: "https://ceotripura.nic.in/" },
+  "uttar pradesh": { name: "CEO Uttar Pradesh", url: "https://ceouttarpradesh.nic.in/" },
+  "uttarakhand": { name: "CEO Uttarakhand", url: "https://ceouttarakhand.nic.in/" },
+  "west bengal": { name: "CEO West Bengal", url: "https://ceowestbengal.nic.in/" },
+};
 
 /**
- * PollingStationVisualizer component integrates with the Google Civic Information API
- * to display real election data and voter information based on user address input.
+ * PollingStationVisualizer component provides India-specific polling booth 
+ * search functionality using ECI resources and state CEO website links.
  */
 export const PollingStationVisualizer: React.FC = () => {
-  const [address, setAddress] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSearched, setIsSearched] = useState(false);
-  const [elections, setElections] = useState<ElectionInfo[]>([]);
-  const [voterInfo, setVoterInfo] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [matchedState, setMatchedState] = useState<{ name: string; url: string } | null>(null);
 
-  // Fetch upcoming elections on mount using Google Civic API
-  useEffect(() => {
-    const loadElections = async () => {
-      try {
-        const data = await fetchElections();
-        if (data && data.length > 0) {
-          setElections(data.slice(0, 5));
-        }
-      } catch (err) {
-        console.error('Failed to load elections:', err);
-      }
-    };
-    loadElections();
-  }, []);
-
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedAddress = address.trim();
-    if (!trimmedAddress) return;
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return;
 
-    setIsSearching(true);
-    setError(null);
     setIsSearched(true);
 
-    try {
-      const info = await fetchVoterInfo(trimmedAddress);
-      setVoterInfo(info);
-    } catch (err) {
-      setError('Unable to fetch voter information. Please try a valid US address.');
-    } finally {
-      setIsSearching(false);
-    }
+    // Try to match with a state
+    const found = Object.entries(STATE_CEO_MAP).find(([key]) => 
+      query.includes(key) || key.includes(query)
+    );
+    setMatchedState(found ? found[1] : null);
   };
 
   return (
@@ -53,69 +90,83 @@ export const PollingStationVisualizer: React.FC = () => {
       className="glass-panel" 
       style={{ padding: 'var(--spacing-xl)', marginTop: 'var(--spacing-2xl)' }}
       role="region"
-      aria-label="Polling station finder"
+      aria-label="Polling booth finder"
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
         <Map color="var(--color-primary)" size={28} aria-hidden="true" />
-        <h3 id="polling-heading" style={{ fontSize: 'var(--text-2xl)' }}>Find Your Polling Station</h3>
+        <h3 id="polling-heading" style={{ fontSize: 'var(--text-2xl)' }}>Find Your Polling Booth</h3>
       </div>
       
       <p id="polling-description" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
-        Enter your address to find official voting centers and election information using the Google Civic Information API.
+        Enter your state or city name to find your Chief Electoral Officer (CEO) website and polling booth details. You can also use the official Voter Helpline App or call 1950.
       </p>
 
-      {/* Upcoming Elections from Google Civic API */}
-      {elections.length > 0 && (
-        <div 
-          role="region" 
-          aria-label="Upcoming elections"
-          style={{ 
-            marginBottom: 'var(--spacing-lg)', 
-            padding: 'var(--spacing-md)', 
-            background: 'rgba(59, 130, 246, 0.1)', 
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid rgba(59, 130, 246, 0.2)'
-          }}
-        >
-          <h4 style={{ fontSize: 'var(--text-sm)', color: 'var(--color-primary)', marginBottom: 'var(--spacing-sm)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
-            <Calendar size={16} aria-hidden="true" /> Upcoming Elections (via Google Civic API)
-          </h4>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {elections.map((election) => (
-              <li 
-                key={election.id}
-                style={{ 
-                  padding: 'var(--spacing-xs) 0', 
-                  fontSize: 'var(--text-sm)', 
-                  color: 'var(--color-text-secondary)',
-                  display: 'flex',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <span>{election.name}</span>
-                <span style={{ color: 'var(--color-text-muted)' }}>{election.electionDay}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* ECI Quick Links */}
+      <div 
+        role="region"
+        aria-label="Official ECI Resources"
+        style={{ 
+          marginBottom: 'var(--spacing-lg)',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 'var(--spacing-sm)'
+        }}
+      >
+        {ECI_RESOURCES.map((resource, idx) => (
+          <a
+            key={idx}
+            href={resource.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${resource.name} - ${resource.description} (opens in new tab)`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-sm)',
+              padding: 'var(--spacing-sm) var(--spacing-md)',
+              background: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--color-primary)',
+              textDecoration: 'none',
+              fontSize: 'var(--text-sm)',
+              transition: 'var(--transition-fast)'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+            }}
+          >
+            {resource.icon}
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{resource.name}</div>
+              <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>{resource.description}</div>
+            </div>
+          </a>
+        ))}
+      </div>
 
+      {/* Search Form */}
       <form 
         onSubmit={handleSearch} 
         role="search"
-        aria-label="Search for polling station by address"
+        aria-label="Search for your state CEO website"
         style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-lg)' }}
       >
-        <label htmlFor="address-input" className="sr-only">Enter your address</label>
+        <label htmlFor="state-input" className="sr-only">Enter your state or city name</label>
         <input 
-          id="address-input"
+          id="state-input"
           type="text" 
-          placeholder="e.g. 1600 Pennsylvania Ave, Washington DC" 
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          aria-label="Enter your address to find polling locations"
+          placeholder="e.g. Karnataka, Delhi, Maharashtra, Tamil Nadu..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          aria-label="Enter your state or city to find polling booth"
           aria-describedby="polling-description"
-          autoComplete="street-address"
+          autoComplete="off"
           required
           style={{ 
             flex: 1, 
@@ -129,34 +180,34 @@ export const PollingStationVisualizer: React.FC = () => {
         />
         <button 
           type="submit"
-          aria-label="Search for polling stations"
-          disabled={isSearching || !address.trim()}
+          aria-label="Search for state election office"
+          disabled={!searchQuery.trim()}
           style={{ 
             padding: 'var(--spacing-sm) var(--spacing-lg)', 
-            background: address.trim() ? 'var(--color-primary)' : 'var(--color-surface-hover)', 
+            background: searchQuery.trim() ? 'var(--color-primary)' : 'var(--color-surface-hover)', 
             border: 'none', 
             borderRadius: 'var(--radius-sm)', 
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--spacing-xs)',
             color: 'white', 
-            cursor: address.trim() ? 'pointer' : 'not-allowed',
+            cursor: searchQuery.trim() ? 'pointer' : 'not-allowed',
             fontWeight: 600,
             transition: 'var(--transition-fast)'
           }}
         >
-          <Search size={18} aria-hidden="true" /> {isSearching ? 'Searching...' : 'Search'}
+          <Search size={18} aria-hidden="true" /> Search
         </button>
       </form>
 
-      {/* Results Container */}
+      {/* Results */}
       <div 
         role="region"
         aria-label="Search results"
         aria-live="polite"
         style={{ 
           width: '100%', 
-          minHeight: '300px', 
+          minHeight: '250px', 
           borderRadius: 'var(--radius-md)', 
           overflow: 'hidden',
           border: '1px solid var(--color-border)',
@@ -179,96 +230,89 @@ export const PollingStationVisualizer: React.FC = () => {
           }} 
         />
 
-        {error && (
-          <div 
-            role="alert" 
-            style={{ 
-              zIndex: 1, textAlign: 'center', 
-              background: 'rgba(239, 68, 68, 0.1)', 
-              padding: 'var(--spacing-lg)', 
-              borderRadius: 'var(--radius-lg)', 
-              border: '1px solid rgba(239, 68, 68, 0.3)' 
-            }}
-          >
-            <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto var(--spacing-sm)' }} />
-            <p style={{ color: '#ef4444' }}>{error}</p>
-          </div>
-        )}
-
-        {isSearching && (
-          <div role="status" aria-label="Loading results" style={{ zIndex: 1, textAlign: 'center' }}>
-            <div style={{ 
-              width: '48px', height: '48px', 
-              border: '3px solid var(--color-surface-hover)', 
-              borderTop: '3px solid var(--color-primary)',
-              borderRadius: '50%', animation: 'spin 1s linear infinite',
-              margin: '0 auto var(--spacing-sm)'
-            }} />
-            <p style={{ color: 'var(--color-text-secondary)' }}>Searching Google Civic API...</p>
-            <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-          </div>
-        )}
-
-        {!error && !isSearching && isSearched && (
+        {isSearched ? (
           <div style={{ zIndex: 1, textAlign: 'center', width: '100%', maxWidth: '500px' }}>
             <MapPin size={48} color="var(--color-primary)" style={{ margin: '0 auto var(--spacing-sm)' }} />
             <h4 style={{ fontSize: 'var(--text-lg)', color: 'white', marginBottom: 'var(--spacing-md)' }}>
-              Results for: {address}
+              Results for: {searchQuery}
             </h4>
             
-            {voterInfo?.state?.[0]?.electionAdministrationBody && (
+            {matchedState ? (
               <div style={{ 
                 textAlign: 'left', 
                 background: 'rgba(15, 23, 42, 0.9)', 
-                padding: 'var(--spacing-md)', 
+                padding: 'var(--spacing-lg)', 
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--color-border-glow)',
+              }}>
+                <h5 style={{ color: 'var(--color-primary)', marginBottom: 'var(--spacing-sm)' }}>
+                  🏛️ {matchedState.name}
+                </h5>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--spacing-md)' }}>
+                  Visit your state's Chief Electoral Officer website to:
+                </p>
+                <ul style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingLeft: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)' }}>
+                  <li>Search your name in the electoral roll</li>
+                  <li>Find your assigned polling booth</li>
+                  <li>Download your voter slip</li>
+                  <li>Check election schedule</li>
+                </ul>
+                <a
+                  href={matchedState.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Visit ${matchedState.name} official website (opens in new tab)`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 'var(--spacing-xs)',
+                    background: 'var(--color-primary)',
+                    color: 'white',
+                    padding: 'var(--spacing-sm) var(--spacing-lg)',
+                    borderRadius: 'var(--radius-full)',
+                    textDecoration: 'none',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 600
+                  }}
+                >
+                  <ExternalLink size={14} aria-hidden="true" /> Visit Official Website
+                </a>
+              </div>
+            ) : (
+              <div style={{ 
+                background: 'rgba(15, 23, 42, 0.9)', 
+                padding: 'var(--spacing-lg)', 
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--color-border)',
-                marginBottom: 'var(--spacing-md)'
               }}>
-                <h5 style={{ color: 'var(--color-primary)', marginBottom: 'var(--spacing-sm)', fontSize: 'var(--text-sm)' }}>
-                  Election Administration
-                </h5>
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>
-                  {voterInfo.state[0].electionAdministrationBody.name}
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--spacing-md)' }}>
+                  We couldn't find a specific match for "{searchQuery}". Try entering your full state name (e.g., "Karnataka", "Tamil Nadu").
                 </p>
-                {voterInfo.state[0].electionAdministrationBody.electionInfoUrl && (
-                  <a 
-                    href={voterInfo.state[0].electionAdministrationBody.electionInfoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Visit official election information website (opens in new tab)"
-                    style={{ 
-                      color: 'var(--color-primary)', 
-                      fontSize: 'var(--text-sm)', 
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                      marginTop: 'var(--spacing-xs)'
-                    }}
-                  >
-                    <ExternalLink size={14} aria-hidden="true" /> Official Election Info
+                <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+                  You can also use these national resources:
+                </p>
+                <div style={{ marginTop: 'var(--spacing-sm)', display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
+                  <a href="https://www.nvsp.in/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', fontSize: 'var(--text-sm)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <ExternalLink size={12} aria-hidden="true" /> NVSP Portal
                   </a>
-                )}
+                  <a href="https://electoralsearch.eci.gov.in/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', fontSize: 'var(--text-sm)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <ExternalLink size={12} aria-hidden="true" /> Electoral Search
+                  </a>
+                </div>
               </div>
             )}
-
-            {!voterInfo && (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-                No specific election data found for this address. Try a valid US address with city and state.
-              </p>
-            )}
           </div>
-        )}
-
-        {!isSearched && !isSearching && (
+        ) : (
           <div style={{ zIndex: 1, textAlign: 'center' }}>
             <Map size={48} color="var(--color-text-muted)" style={{ margin: '0 auto var(--spacing-sm)', opacity: 0.5 }} aria-hidden="true" />
-            <p style={{ color: 'var(--color-text-muted)' }}>Enter an address to search for polling stations.</p>
+            <p style={{ color: 'var(--color-text-muted)' }}>Enter your state name to find your election office.</p>
           </div>
         )}
       </div>
       
       <div style={{ marginTop: 'var(--spacing-sm)', textAlign: 'center' }}>
         <small style={{ color: 'var(--color-text-muted)' }}>
-          Powered by Google Civic Information API &amp; Google Gemini AI
+          Data sourced from Election Commission of India (ECI) • Voter Helpline: 1950
         </small>
       </div>
     </div>

@@ -1,45 +1,45 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, ArrowRight, MapPin, FileText, Vote } from 'lucide-react';
+import { CheckCircle2, ArrowRight, MapPin, FileText, Vote, UserCheck } from 'lucide-react';
 
 const TIMELINE_STEPS = [
   {
     id: 1,
     title: "Eligibility Check",
-    icon: <CheckCircle2 size={24} aria-hidden="true" />,
-    description: "Verify your eligibility to vote. Generally, you must be a citizen, 18 years or older, and a resident of your constituency.",
-    action: "Check Requirements",
-    details: "Requirements can vary slightly by region. Ensure you have valid ID."
+    icon: <UserCheck size={24} aria-hidden="true" />,
+    description: "Verify your eligibility to vote in Indian elections. You must be an Indian citizen, at least 18 years of age on the qualifying date (1st January of the year of revision), and a resident of the constituency where you wish to vote.",
+    action: "Check Eligibility",
+    details: "You need to be an ordinary resident of a constituency. NRIs can also register under Section 20A of the RP Act, 1950."
   },
   {
     id: 2,
-    title: "Voter Registration",
+    title: "Voter Registration (Form 6)",
     icon: <FileText size={24} aria-hidden="true" />,
-    description: "Enroll in the electoral roll. If you've moved, you must update your address.",
-    action: "Register Online",
-    details: "Deadlines apply! Registration usually closes weeks before election day."
+    description: "Register as a voter through the NVSP portal (nvsp.in) by filling Form 6 online. You can also visit your nearest Electoral Registration Office (ERO) with supporting documents.",
+    action: "How to Register",
+    details: "Required documents: Age proof (Aadhaar, Birth Certificate, or Marksheet), Address proof (Aadhaar, Passport, Utility Bill), and a passport-size photo. Track your application at nvsp.in."
   },
   {
     id: 3,
-    title: "Find Your Polling Station",
+    title: "Find Your Polling Booth",
     icon: <MapPin size={24} aria-hidden="true" />,
-    description: "Locate where you need to go on election day. Polling stations are assigned based on your registered address.",
-    action: "Locate Station",
-    details: "Your voter slip or local election website will have this information."
+    description: "Locate your assigned polling booth using the Voter Helpline App by ECI, the National Voters' Service Portal (nvsp.in), or your state's CEO (Chief Electoral Officer) website.",
+    action: "Locate Booth",
+    details: "You can also call the Voter Helpline at 1950 or send an SMS 'EPIC <Voter ID No>' to 1950 to find your polling booth details."
   },
   {
     id: 4,
-    title: "Election Day",
+    title: "Election Day Voting",
     icon: <Vote size={24} aria-hidden="true" />,
-    description: "Cast your ballot! Bring your required identification and know your polling hours.",
-    action: "View Guidelines",
-    details: "If you are in line before the polls close, you have the right to vote."
+    description: "Visit your assigned polling booth with a valid photo ID (EPIC card, Aadhaar, Passport, DL, PAN, etc.). Cast your vote using the EVM (Electronic Voting Machine) and verify it on the VVPAT slip.",
+    action: "Voting Guide",
+    details: "Polling hours are typically 7 AM to 6 PM. You also have the option to select NOTA (None of the Above) if you don't wish to vote for any candidate. Indelible ink is applied on the left index finger."
   }
 ];
 
 /**
  * VoterTimeline component displays an interactive, step-by-step guide
- * through the voting process. Each step can be expanded for details
+ * through India's voting process. Each step can be expanded for details
  * and triggers the AI assistant for more information.
  */
 export const VoterTimeline: React.FC = () => {
@@ -51,14 +51,14 @@ export const VoterTimeline: React.FC = () => {
 
   const handleAskAssistant = (stepTitle: string) => {
     window.dispatchEvent(new CustomEvent('ask-assistant', { 
-      detail: `Can you explain the requirements and details for ${stepTitle}?` 
+      detail: `Can you explain the requirements and details for ${stepTitle} in the Indian election process?` 
     }));
   };
 
   return (
     <div 
       role="list" 
-      aria-label="Voter journey timeline with 4 steps"
+      aria-label="Indian voter journey timeline with 4 steps"
       style={{ position: 'relative', paddingLeft: 'var(--spacing-md)' }}
     >
       {/* Vertical Progress Line */}

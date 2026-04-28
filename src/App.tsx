@@ -26,7 +26,7 @@ function App() {
         <div>
           <h1 className="text-gradient" style={{ fontSize: 'var(--text-2xl)' }}>CivicSync</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>
-            The Intelligent Election Guide — Powered by Google Gemini AI
+            Your AI Guide to India's Electoral Process — Powered by Google Gemini
           </p>
         </div>
         <nav aria-label="Main navigation">
@@ -52,7 +52,7 @@ function App() {
                 onFocus={e => e.currentTarget.style.color = 'var(--color-primary)'}
                 onBlur={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
               >
-                Find Polling Station
+                Find Polling Booth
               </a>
             </li>
             <li>
@@ -75,10 +75,10 @@ function App() {
         {/* Hero Section */}
         <section id="hero" aria-labelledby="hero-heading" style={{ textAlign: 'center', margin: 'var(--spacing-2xl) 0' }}>
           <h2 id="hero-heading" style={{ fontSize: 'var(--text-5xl)', marginBottom: 'var(--spacing-md)' }}>
-            Navigate Democracy with Confidence
+            Navigate India's Democracy with Confidence
           </h2>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-xl)', maxWidth: '600px', margin: '0 auto' }}>
-            Interactive guides, timeline trackers, and an AI assistant powered by Google Gemini to help you understand every step of the election process.
+            Interactive guides, timeline trackers, and an AI assistant powered by Google Gemini to help you understand voter registration, EPIC card, EVM voting, and every step of India's election process.
           </p>
         </section>
 
@@ -144,10 +144,10 @@ function App() {
         }}
       >
         <p>
-          CivicSync © {new Date().getFullYear()} — Built with Google Gemini AI &amp; Google Civic Information API
+          CivicSync © {new Date().getFullYear()} — Built with Google Gemini AI for India's Electoral Education
         </p>
         <p style={{ marginTop: 'var(--spacing-xs)' }}>
-          This application is for educational purposes only. Always verify information with official election authorities.
+          This application is for educational purposes only. Always verify information with the Election Commission of India (eci.gov.in).
         </p>
       </footer>
     </div>
