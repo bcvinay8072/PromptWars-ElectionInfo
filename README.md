@@ -11,7 +11,7 @@
 ---
 
 ## 🏛️ Chosen Vertical
-**Election Process Education (India)** — An interactive assistant that simplifies voter eligibility, registration (Form 6), EPIC card, polling booth location, and EVM/VVPAT procedures into an engaging, AI-driven journey.
+**Election Process Education (India)** — An interactive assistant that simplifies voter eligibility, registration (Form 6), EPIC card, polling booth location, and EVM/VVPAT procedures into an engaging, AI-driven journey for the world's largest democracy.
 
 ---
 
@@ -21,7 +21,7 @@
 - **Deep Gemini Integration:** Utilizes the `@google/generative-ai` SDK with strict safety settings and a comprehensive system prompt focused on the Election Commission of India (ECI) guidelines.
 - **Indian Election Context:** The assistant is primed with knowledge about NVSP portal, EPIC (Voter ID), EVMs, VVPATs, NOTA, and constitutional requirements.
 - **Streaming Responses:** Implements real-time token-by-token streaming for a modern, fluid UX.
-- **Event-Driven Architecture:** Clicking any timeline step automatically triggers the AI assistant via a custom `ask-assistant` event.
+- **Event-Driven Architecture:** Clicking any timeline step automatically triggers the AI assistant via a custom `ask-assistant` event for contextual help.
 
 ### 2. ECI & National Resource Integration
 - **Direct Resource Linking:** Integrated links to the National Voters' Service Portal (NVSP), Voter Helpline App, and official ECI portal.
@@ -34,7 +34,7 @@
 
 ### 4. Google Cloud Run Deployment
 - Containerized via **Docker** (multi-stage build: Node.js → Nginx).
-- Deployed to **Google Cloud Run** with auto-scaling and HTTPS.
+- Deployed to **Google Cloud Run** with high-availability and security.
 
 ---
 
@@ -46,34 +46,33 @@
 | **Animation** | Framer Motion |
 | **Icons** | Lucide React |
 | **Infrastructure** | Docker + Google Cloud Run |
-| **Testing** | Jest + React Testing Library (41 tests passing) |
+| **Testing** | Jest + React Testing Library (**41 tests passing**) |
 
 ---
 
 ## 🔐 Security Features
-- **Input Sanitization:** All user inputs are sanitized before API transmission.
-- **Rate Limiting:** Token bucket rate limiter prevents API abuse.
+- **Input Sanitization:** All user inputs are sanitized for XSS and JS injection before transmission.
+- **Rate Limiting:** Implements a **Token Bucket** rate limiter to prevent API abuse.
 - **Safety Settings:** Gemini API configured with strict thresholds for responsible AI.
-- **Error Boundaries:** React ErrorBoundary components wrap all critical sections.
+- **Error Boundaries:** React ErrorBoundary components wrap all critical sections for resilience.
 
 ---
 
 ## ♿ Accessibility Features
 - **Full ARIA Compliance:** Proper landmarks, roles, and live regions.
 - **Keyboard Navigation:** Fully navigable via keyboard with visible focus indicators.
-- **Screen Reader Support:** Tested and optimized for assistive technologies.
+- **Skip Navigation**: Included `Skip to main content` for screen reader efficiency.
 - **Reduced Motion:** Respects user's motion preferences.
 
 ---
 
-## 🧪 Testing (41 Tests Passing)
-Comprehensive coverage including:
-- Component rendering and navigation
-- Accessibility and landmark roles
-- Voter journey state transitions
-- AI assistant interaction and streaming
-- Search functionality and ECI resource display
-- Security sanitization and rate limiting
+## 🧪 Testing Achievement
+The project features a comprehensive test suite with **41 passing tests** (100% pass rate) covering:
+- **Accessibility & Landmark Roles**
+- **Security & Sanitization Logic**
+- **Voter Journey State Transitions**
+- **AI Assistant Event Integration**
+- **Navigation & Routing Integrity**
 
 Run tests: `npm test`
 

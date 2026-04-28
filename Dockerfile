@@ -8,6 +8,7 @@ RUN npm install
 
 # Copy source code and build the app
 COPY . .
+ENV REACT_APP_GEMINI_API_KEY="AIzaSyD9bzt0xWc-mSoHUabMqKsuupz1abopx5c"
 RUN npm run build
 
 # Production stage
