@@ -8,8 +8,8 @@ RUN npm install
 
 # Copy source code and build the app
 COPY . .
-ENV REACT_APP_GEMINI_API_KEY="AIzaSyD9bzt0xWc-mSoHUabMqKsuupz1abopx5c"
-RUN npm run build
+ARG REACT_APP_GEMINI_API_KEY
+RUN REACT_APP_GEMINI_API_KEY=${REACT_APP_GEMINI_API_KEY} npm run build
 
 # Production stage
 FROM nginx:alpine
