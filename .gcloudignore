@@ -1,0 +1,7 @@
+# .gcloudignore
+.git
+.gitignore
+node_modules
+
+# Allow .env.production to be uploaded for the build
+!.env.production
