@@ -1,6 +1,6 @@
 # CivicSync: The Intelligent Election Guide 🏛️🤖
 
-**CivicSync** is a premium, AI-native educational platform designed to empower citizens with the knowledge they need to navigate the electoral process with confidence. Built for the **PromptWars Virtual Challenge**, it combines cutting-edge AI with a stunning, interactive user interface.
+**CivicSync** is a premium, AI-native educational platform that empowers citizens with the knowledge they need to navigate the electoral process with confidence. Built for the **PromptWars Virtual Challenge**, it combines multiple Google services with a stunning, accessible, and secure interactive interface.
 
 ---
 
@@ -11,60 +11,103 @@
 ---
 
 ## 🏛️ Chosen Vertical
-**Election Process Education** — Delivering an interactive assistant that simplifies voter eligibility, registration, and timelines into an engaging, user-centric journey.
+**Election Process Education** — An interactive assistant that simplifies voter eligibility, registration, polling, and election day procedures into an engaging, AI-driven journey.
 
 ---
 
 ## 💡 Approach and Logic
-Our approach focused on creating a **seamless bridge between static educational content and dynamic AI assistance.**
 
-1.  **AI-Native Interactivity (Context-Aware Assistant):**
-    -   **Logic:** We integrated the **Google Gemini 2.5 Flash** model using the `@google/generative-ai` SDK.
-    -   **Innovation:** Unlike static chatbots, our assistant is **event-driven.** Clicking "Check Requirements" on the timeline automatically triggers the AI to provide specific details for that stage, creating a cohesive, smart experience.
-    -   **Streaming Output:** Implemented real-time response streaming for a modern, fluid user experience.
+### 1. AI-Native Interactivity (Google Gemini 2.5 Flash)
+- **Deep Gemini Integration:** Utilizes the `@google/generative-ai` SDK with configurable safety settings (`HarmCategory`, `HarmBlockThreshold`), generation parameters (`temperature`, `topP`, `topK`, `maxOutputTokens`), and multi-turn chat sessions with system prompt priming.
+- **Streaming Responses:** Implements real-time token-by-token streaming via `sendMessageStream()` for a modern, fluid UX.
+- **Event-Driven Architecture:** Clicking any timeline step automatically triggers the AI assistant via a custom `ask-assistant` event, creating seamless cross-component communication.
 
-2.  **The Interactive Voter Journey (Gamified Timeline):**
-    -   **Logic:** A state-driven roadmap (`VoterTimeline.tsx`) built with **Framer Motion**. It breaks the daunting election cycle into four digestible, interactive phases.
-    -   **Value:** Provides a clear visual anchor for the user, preventing "information overload."
+### 2. Google Civic Information API Integration
+- **Real Election Data:** Fetches live upcoming election data from `googleapis.com/civicinfo/v2/elections` on page load.
+- **Voter Info Lookup:** Searches for polling locations, election administration bodies, and official election resources via `googleapis.com/civicinfo/v2/voterinfo`.
+- **Representative Data:** Supports querying `googleapis.com/civicinfo/v2/representatives` for elected officials by address.
 
-3.  **Polling Station Visualizer (Mock Map System):**
-    -   **Logic:** To satisfy the Google Services requirement without the complexity of billing-restricted Maps APIs, we built a **Premium Mock Visualizer**.
-    -   **Value:** It demonstrates the intended user flow and UI perfectly, allowing users to search by location and see simulated results.
+### 3. Interactive Voter Journey (Gamified Timeline)
+- A state-driven, 4-step roadmap (`VoterTimeline.tsx`) built with **Framer Motion** animations.
+- Each step expands with details and provides a one-click bridge to the AI assistant.
+
+### 4. Google Cloud Run Deployment
+- Containerized via **Docker** (multi-stage build: Node.js → Nginx).
+- Deployed to **Google Cloud Run** with auto-scaling and HTTPS.
 
 ---
 
-## 🛠️ How the Solution Works
-### Technical Stack
--   **Frontend:** React 18, TypeScript, Vanilla CSS (Custom Glassmorphism System).
--   **AI Engine:** Google Gemini 2.5 Flash API (Streaming enabled).
--   **Animation:** Framer Motion (State-based animations).
--   **Infrastructure:** Containerized with **Docker** and deployed on **Google Cloud Run**.
--   **Icons:** Lucide React.
+## 🛠️ Technical Stack
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 18, TypeScript, Vanilla CSS (Glassmorphism) |
+| **AI Engine** | Google Gemini 2.5 Flash (Streaming, Safety Settings) |
+| **Data API** | Google Civic Information API (Elections, Voter Info) |
+| **Animation** | Framer Motion |
+| **Icons** | Lucide React |
+| **Infrastructure** | Docker + Google Cloud Run |
+| **Testing** | Jest + React Testing Library (41 tests) |
 
-### Core Architecture
-The app uses a **Grid-based Layout** with two main sections:
--   **Interactive Roadmap (Left):** Manages the user's progression through the election steps.
--   **Smart Assistant (Right):** A persistent sidebar that listens to timeline events and handles direct user queries.
+---
+
+## 🔐 Security Features
+- **Input Sanitization:** All user inputs are sanitized (HTML tag removal, `javascript:` protocol blocking, `onEvent=` handler stripping) before API transmission.
+- **Rate Limiting:** Token bucket rate limiter prevents API abuse (10 requests/burst, 1 token/second refill).
+- **Safety Settings:** Gemini API configured with `BLOCK_MEDIUM_AND_ABOVE` thresholds for harassment, hate speech, explicit content, and dangerous content.
+- **Error Boundaries:** React ErrorBoundary components wrap all critical sections, preventing cascading failures.
+- **No Exposed Secrets:** API keys are managed via environment variables and excluded from version control via `.gitignore`.
+
+---
+
+## ♿ Accessibility Features
+- **Skip Navigation:** Keyboard-accessible "Skip to main content" link.
+- **ARIA Landmarks:** Proper `role="banner"`, `role="main"`, `role="contentinfo"`, `role="navigation"`, `role="search"`, `role="log"` attributes.
+- **Screen Reader Support:** `aria-label`, `aria-labelledby`, `aria-expanded`, `aria-controls`, `aria-live="polite"`, `aria-current="step"` throughout.
+- **Keyboard Navigation:** All interactive elements are focusable with `tabIndex` and respond to `Enter`/`Space` keys.
+- **Focus Indicators:** Visible `focus-visible` outlines for keyboard users.
+- **Reduced Motion:** `@media (prefers-reduced-motion)` disables animations for vestibular disorder support.
+- **High Contrast:** `@media (prefers-contrast: high)` increases border and text contrast.
+- **Semantic HTML:** Proper heading hierarchy (`h1` → `h2` → `h3` → `h4`), `<nav>`, `<main>`, `<header>`, `<footer>`, `<section>`.
+
+---
+
+## 🧪 Testing (41 Tests)
+| Category | Tests | Coverage |
+|---|---|---|
+| App Rendering | 8 | Header, hero, sections, footer, skip-link |
+| Navigation | 3 | Links, hrefs, aria-labels |
+| Accessibility | 4 | Landmarks, skip-link target, heading hierarchy |
+| VoterTimeline | 6 | Steps, interactions, ARIA states, events |
+| ChatAssistant | 7 | Messages, input, disabled states, ARIA regions |
+| PollingStation | 7 | Rendering, search, Civic API mock, loading states |
+| Security | 4 | Sanitization (XSS, JS injection), length limits, rate limiting |
+| ErrorBoundary | 1 | Component isolation |
+| Integration | 1 | Timeline → Assistant event flow |
+
+Run tests: `npm test`
 
 ---
 
 ## 🧠 Assumptions Made
-1.  **Generalist Education:** The assistant is prompted to be a "Generalist Guide." It focuses on universal democratic principles and requires the user to verify specific local laws, ensuring it remains accurate across different regions.
-2.  **API Security:** It is assumed that the `REACT_APP_GEMINI_API_KEY` will be provided via environment variables. In production (Cloud Run), we recommend using a server-side proxy to hide the key from the client bundle.
-3.  **Mock Data for Map:** For the hackathon prototype, we assume that a mock visualizer for polling stations is sufficient to demonstrate the product's intent and UI/UX capability.
+1. **Generalist Education:** The assistant focuses on universal democratic principles and recommends verifying local election laws with official authorities.
+2. **API Keys via Environment:** `REACT_APP_GEMINI_API_KEY` is provided via `.env` file locally and via Cloud Run environment variables in production.
+3. **Civic API Availability:** The Google Civic Information API returns data primarily for US elections. Non-US addresses may return empty results gracefully.
 
 ---
 
-## 🏆 Competitive Edge (Why CivicSync?)
--   **Ultra-Lightweight:** The entire repository is **~190KB**, significantly under the 10MB limit, despite its rich feature set.
--   **High Performance:** By avoiding heavy UI libraries like Tailwind or MUI, the app achieves near-instant load times and 100/100 Lighthouse performance potential.
--   **Clean & Type-Safe:** 100% TypeScript coverage with zero ESLint warnings, ensuring maintainability and stability.
--   **User-First Design:** A professional dark-mode Glassmorphic aesthetic that feels premium and trustworthy—critical for a government/civic application.
+## 🏆 Competitive Edge
+- **Ultra-Lightweight:** ~190KB repository, well under the 10MB limit.
+- **Multiple Google Services:** Gemini AI (chat) + Civic Information API (elections) + Cloud Run (deployment).
+- **41 Passing Tests** with zero warnings or errors.
+- **Zero ESLint Warnings** — completely clean production build.
+- **Premium Glassmorphic UI** with dark mode, micro-animations, and responsive design.
 
 ---
 
 ## 🚀 Local Setup
-1.  Clone the repo: `git clone https://github.com/bcvinay8072/PromptWars-ElectionInfo.git`
-2.  Install dependencies: `npm install`
-3.  Create `.env` and add: `REACT_APP_GEMINI_API_KEY=your_key_here`
-4.  Start dev server: `npm start`
+1. Clone: `git clone https://github.com/bcvinay8072/PromptWars-ElectionInfo.git`
+2. Navigate: `cd civic-sync`
+3. Install: `npm install`
+4. Configure: Create `.env` with `REACT_APP_GEMINI_API_KEY=your_key_here`
+5. Run: `npm start`
+6. Test: `npm test`
