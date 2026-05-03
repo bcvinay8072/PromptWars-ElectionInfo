@@ -1,11 +1,49 @@
-import React from 'react';
+import React, { lazy, Suspense, useEffect, useMemo } from 'react';
 import './index.css';
-import { ChatAssistant } from './components/ChatAssistant';
-import { VoterTimeline } from './components/VoterTimeline';
-import { PollingStationVisualizer } from './components/PollingStation';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { trackPageView } from './lib/firebase';
+
+// Lazy-load heavy components for better initial load performance
+const ChatAssistant = lazy(() => import('./components/ChatAssistant').then(m => ({ default: m.ChatAssistant })));
+const VoterTimeline = lazy(() => import('./components/VoterTimeline').then(m => ({ default: m.VoterTimeline })));
+const PollingStationVisualizer = lazy(() => import('./components/PollingStation').then(m => ({ default: m.PollingStationVisualizer })));
+
+/** Loading fallback component for Suspense boundaries */
+const LoadingFallback: React.FC<{ label: string }> = ({ label }) => (
+  <div 
+    role="status" 
+    aria-label={`Loading ${label}`}
+    style={{ 
+      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+      padding: 'var(--spacing-2xl)', color: 'var(--color-text-muted)' 
+    }}
+  >
+    <span>Loading {label}...</span>
+  </div>
+);
+
+/** Navigation link configuration */
+interface NavLink {
+  href: string;
+  label: string;
+}
+
+/** Application navigation links */
+const NAV_LINKS: NavLink[] = [
+  { href: '#journey', label: 'Voter Journey' },
+  { href: '#polling', label: 'Find Polling Booth' },
+  { href: '#assistant', label: 'AI Assistant' },
+];
 
 function App() {
+  // Track page view on mount via Firebase Analytics
+  useEffect(() => {
+    trackPageView('CivicSync Home');
+  }, []);
+
+  // Memoize the current year to prevent unnecessary re-renders
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
+
   return (
     <div className="app-container" lang="en">
       {/* Skip Navigation Link for Accessibility */}
@@ -29,46 +67,32 @@ function App() {
             Your AI Guide to India's Electoral Process — Powered by Google Gemini
           </p>
         </div>
-        <nav aria-label="Main navigation">
-          <ul style={{ display: 'flex', gap: 'var(--spacing-md)', listStyle: 'none' }}>
-            <li>
-              <a 
-                href="#journey" 
-                style={{ color: 'var(--color-text-primary)', textDecoration: 'none', transition: 'color var(--transition-fast)' }} 
-                onMouseOver={e => e.currentTarget.style.color = 'var(--color-primary)'} 
-                onMouseOut={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
-                onFocus={e => e.currentTarget.style.color = 'var(--color-primary)'}
-                onBlur={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
-              >
-                Voter Journey
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#polling" 
-                style={{ color: 'var(--color-text-primary)', textDecoration: 'none', transition: 'color var(--transition-fast)' }} 
-                onMouseOver={e => e.currentTarget.style.color = 'var(--color-primary)'} 
-                onMouseOut={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
-                onFocus={e => e.currentTarget.style.color = 'var(--color-primary)'}
-                onBlur={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
-              >
-                Find Polling Booth
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#assistant" 
-                style={{ color: 'var(--color-text-primary)', textDecoration: 'none', transition: 'color var(--transition-fast)' }} 
-                onMouseOver={e => e.currentTarget.style.color = 'var(--color-primary)'} 
-                onMouseOut={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
-                onFocus={e => e.currentTarget.style.color = 'var(--color-primary)'}
-                onBlur={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
-              >
-                AI Assistant
-              </a>
-            </li>
-          </ul>
-        </nav>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+          {/* Google Translate Widget Container */}
+          <div 
+            id="google_translate_element" 
+            aria-label="Translate this page"
+            style={{ minWidth: '120px' }}
+          ></div>
+          <nav aria-label="Main navigation">
+            <ul style={{ display: 'flex', gap: 'var(--spacing-md)', listStyle: 'none' }}>
+              {NAV_LINKS.map((link) => (
+                <li key={link.href}>
+                  <a 
+                    href={link.href} 
+                    style={{ color: 'var(--color-text-primary)', textDecoration: 'none', transition: 'color var(--transition-fast)' }} 
+                    onMouseOver={e => e.currentTarget.style.color = 'var(--color-primary)'} 
+                    onMouseOut={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
+                    onFocus={e => e.currentTarget.style.color = 'var(--color-primary)'}
+                    onBlur={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </header>
 
       <main id="main-content" className="main-content" role="main">
@@ -95,7 +119,9 @@ function App() {
               <h3 id="journey-heading" style={{ fontSize: 'var(--text-2xl)', marginBottom: 'var(--spacing-lg)' }}>
                 Your Electoral Journey
               </h3>
-              <VoterTimeline />
+              <Suspense fallback={<LoadingFallback label="Voter Journey" />}>
+                <VoterTimeline />
+              </Suspense>
             </section>
           </ErrorBoundary>
 
@@ -117,7 +143,9 @@ function App() {
                 </h3>
               </div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
-                <ChatAssistant />
+                <Suspense fallback={<LoadingFallback label="AI Assistant" />}>
+                  <ChatAssistant />
+                </Suspense>
               </div>
             </section>
           </ErrorBoundary>
@@ -126,7 +154,9 @@ function App() {
         {/* Polling Station Section */}
         <ErrorBoundary fallbackMessage="The polling station finder encountered an error. Please refresh.">
           <section id="polling" aria-labelledby="polling-heading">
-            <PollingStationVisualizer />
+            <Suspense fallback={<LoadingFallback label="Polling Booth Finder" />}>
+              <PollingStationVisualizer />
+            </Suspense>
           </section>
         </ErrorBoundary>
       </main>
@@ -144,7 +174,7 @@ function App() {
         }}
       >
         <p>
-          CivicSync © {new Date().getFullYear()} — Built with Google Gemini AI for India's Electoral Education
+          CivicSync © {currentYear} — Built with Google Gemini AI, Firebase Analytics, and Google Cloud Run for India's Electoral Education
         </p>
         <p style={{ marginTop: 'var(--spacing-xs)' }}>
           This application is for educational purposes only. Always verify information with the Election Commission of India (eci.gov.in).

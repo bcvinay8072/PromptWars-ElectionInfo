@@ -29,6 +29,19 @@ jest.mock('./lib/gemini', () => ({
   },
 }));
 
+// Mock Firebase module for test environment
+jest.mock('./lib/firebase', () => ({
+  trackEvent: jest.fn(),
+  trackPageView: jest.fn(),
+  trackChatInteraction: jest.fn(),
+  trackSearch: jest.fn(),
+  trackJourneyStep: jest.fn(),
+  saveChatToFirestore: jest.fn().mockResolvedValue(undefined),
+  app: {},
+  analytics: null,
+  db: {},
+}));
+
 // Mock the Civic API module (still exists in codebase for Google Services score)
 jest.mock('./lib/civicApi', () => ({
   fetchElections: jest.fn().mockResolvedValue([]),
@@ -58,26 +71,28 @@ describe('App Component', () => {
     expect(heroHeading).toBeInTheDocument();
   });
 
-  test('renders the interactive timeline section', () => {
+  test('renders the interactive timeline section', async () => {
     render(<App />);
-    const journeyHeader = screen.getByText(/Your Electoral Journey/i);
+    const journeyHeader = await screen.findByText(/Your Electoral Journey/i);
     expect(journeyHeader).toBeInTheDocument();
   });
 
-  test('renders the AI assistant section', () => {
+  test('renders the AI assistant section', async () => {
     render(<App />);
-    const assistantHeader = screen.getByRole('heading', { name: /CivicSync Assistant/i });
+    const assistantHeader = await screen.findByRole('heading', { name: /CivicSync Assistant/i });
     expect(assistantHeader).toBeInTheDocument();
   });
 
-  test('renders the polling booth section', () => {
+  test('renders the polling booth section', async () => {
     render(<App />);
-    const pollingHeaders = screen.getAllByText(/Find Your Polling Booth/i);
+    const pollingHeaders = await screen.findAllByText(/Find.*Polling Booth/i);
     expect(pollingHeaders.length).toBeGreaterThanOrEqual(1);
   });
 
-  test('renders the footer with disclaimer', () => {
+  test('renders the footer with disclaimer', async () => {
     render(<App />);
+    // Wait for lazy components to load first
+    await screen.findByText(/Your Electoral Journey/i);
     const footerTexts = screen.getAllByText(/Election Commission of India/i);
     expect(footerTexts.length).toBeGreaterThanOrEqual(1);
   });
@@ -152,46 +167,45 @@ describe('Accessibility', () => {
 // VOTER TIMELINE TESTS
 // ============================================
 describe('VoterTimeline Component', () => {
-  test('renders all 4 timeline steps', () => {
+  test('renders all 4 timeline steps', async () => {
     render(<App />);
-    expect(screen.getByText(/Step 1: Eligibility Check/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Step 1: Eligibility Check/i)).toBeInTheDocument();
     expect(screen.getByText(/Step 2: Voter Registration/i)).toBeInTheDocument();
     expect(screen.getByText(/Step 3/i)).toBeInTheDocument();
     expect(screen.getByText(/Step 4: Election Day/i)).toBeInTheDocument();
   });
 
-  test('first step is active by default and shows description', () => {
+  test('first step is active by default and shows description', async () => {
     render(<App />);
-    expect(screen.getByText(/Indian citizen/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Indian citizen/i)).toBeInTheDocument();
   });
 
-  test('clicking a step changes the active step', () => {
+  test('clicking a step changes the active step', async () => {
     render(<App />);
-    const step2Title = screen.getByText(/Step 2: Voter Registration/i);
+    const step2Title = await screen.findByText(/Step 2: Voter Registration/i);
     fireEvent.click(step2Title);
     expect(screen.getByText(/Register as a voter/i)).toBeInTheDocument();
   });
 
-  test('timeline has proper list role for accessibility', () => {
+  test('timeline has proper list role for accessibility', async () => {
     render(<App />);
-    const list = screen.getByRole('list', { name: /voter journey timeline/i });
+    const list = await screen.findByRole('list', { name: /voter journey timeline/i });
     expect(list).toBeInTheDocument();
   });
 
-  test('step buttons have correct aria-expanded state', () => {
+  test('step buttons have correct aria-expanded state', async () => {
     render(<App />);
-    // Get the circle buttons (not h4 headings)
-    const step1Button = screen.getByRole('button', { name: /Step 1: Eligibility Check \(current\)/i });
+    const step1Button = await screen.findByRole('button', { name: /Step 1: Eligibility Check \(current\)/i });
     expect(step1Button).toHaveAttribute('aria-expanded', 'true');
     const step2Button = screen.getByRole('button', { name: /Step 2.*upcoming/i });
     expect(step2Button).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('step action buttons trigger ask-assistant event', () => {
+  test('step action buttons trigger ask-assistant event', async () => {
     render(<App />);
     const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
     
-    const actionButton = screen.getByText(/Check Eligibility/i);
+    const actionButton = await screen.findByText(/Check Eligibility/i);
     fireEvent.click(actionButton);
     
     expect(dispatchSpy).toHaveBeenCalledWith(
@@ -207,48 +221,48 @@ describe('VoterTimeline Component', () => {
 // CHAT ASSISTANT TESTS
 // ============================================
 describe('ChatAssistant Component', () => {
-  test('renders the welcome message', () => {
+  test('renders the welcome message', async () => {
     render(<App />);
-    expect(screen.getByText(/Namaskar/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Namaskar/i)).toBeInTheDocument();
   });
 
-  test('renders the chat input field', () => {
+  test('renders the chat input field', async () => {
     render(<App />);
-    const chatInput = screen.getByPlaceholderText(/Ask about elections/i);
+    const chatInput = await screen.findByPlaceholderText(/Ask about elections/i);
     expect(chatInput).toBeInTheDocument();
   });
 
-  test('chat input has correct accessibility attributes', () => {
+  test('chat input has correct accessibility attributes', async () => {
     render(<App />);
-    const chatInput = screen.getByPlaceholderText(/Ask about elections/i);
+    const chatInput = await screen.findByPlaceholderText(/Ask about elections/i);
     expect(chatInput).toHaveAttribute('aria-label');
     expect(chatInput).toHaveAttribute('maxLength', '1000');
     expect(chatInput).toHaveAttribute('autoComplete', 'off');
   });
 
-  test('send button is disabled when input is empty', () => {
+  test('send button is disabled when input is empty', async () => {
     render(<App />);
-    const sendButton = screen.getByRole('button', { name: /send message/i });
+    const sendButton = await screen.findByRole('button', { name: /send message/i });
     expect(sendButton).toBeDisabled();
   });
 
-  test('chat input accepts user text', () => {
+  test('chat input accepts user text', async () => {
     render(<App />);
-    const chatInput = screen.getByPlaceholderText(/Ask about elections/i) as HTMLInputElement;
+    const chatInput = await screen.findByPlaceholderText(/Ask about elections/i) as HTMLInputElement;
     
     fireEvent.change(chatInput, { target: { value: 'How do I register to vote?' } });
     expect(chatInput.value).toBe('How do I register to vote?');
   });
 
-  test('chat region has correct aria-label', () => {
+  test('chat region has correct aria-label', async () => {
     render(<App />);
-    const chatRegion = screen.getByRole('region', { name: /CivicSync AI Chat/i });
+    const chatRegion = await screen.findByRole('region', { name: /CivicSync AI Chat/i });
     expect(chatRegion).toBeInTheDocument();
   });
 
-  test('message log has aria-live for screen readers', () => {
+  test('message log has aria-live for screen readers', async () => {
     render(<App />);
-    const messageLog = screen.getByRole('log');
+    const messageLog = await screen.findByRole('log');
     expect(messageLog).toHaveAttribute('aria-live', 'polite');
   });
 });
@@ -257,44 +271,44 @@ describe('ChatAssistant Component', () => {
 // POLLING STATION TESTS
 // ============================================
 describe('PollingStation Component', () => {
-  test('renders polling station heading', () => {
+  test('renders polling station heading', async () => {
     render(<App />);
-    const headings = screen.getAllByText(/Find Your Polling Booth/i);
+    const headings = await screen.findAllByText(/Find.*Polling Booth/i);
     expect(headings.length).toBeGreaterThanOrEqual(1);
   });
 
-  test('renders state search input', () => {
+  test('renders state search input', async () => {
     render(<App />);
-    const addressInput = screen.getByPlaceholderText(/Karnataka/i);
+    const addressInput = await screen.findByPlaceholderText(/Karnataka/i);
     expect(addressInput).toBeInTheDocument();
   });
 
-  test('search input has proper accessibility attributes', () => {
+  test('search input has proper accessibility attributes', async () => {
     render(<App />);
-    const addressInput = screen.getByPlaceholderText(/Karnataka/i);
+    const addressInput = await screen.findByPlaceholderText(/Karnataka/i);
     expect(addressInput).toHaveAttribute('aria-label');
     expect(addressInput).toBeRequired();
   });
 
-  test('search form has search role', () => {
+  test('search form has search role', async () => {
     render(<App />);
-    const searchForm = screen.getByRole('search');
+    const searchForm = await screen.findByRole('search');
     expect(searchForm).toBeInTheDocument();
   });
 
-  test('displays placeholder text when no search has been performed', () => {
+  test('displays placeholder text when no search has been performed', async () => {
     render(<App />);
-    expect(screen.getByText(/Enter your state name/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Enter your state name/i)).toBeInTheDocument();
   });
 
-  test('shows ECI resource links', () => {
+  test('shows ECI resource links', async () => {
     render(<App />);
-    expect(screen.getByText(/NVSP/i)).toBeInTheDocument();
+    expect(await screen.findByText(/NVSP/i)).toBeInTheDocument();
   });
 
-  test('shows search results when state is searched', () => {
+  test('shows search results when state is searched', async () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Karnataka/i);
+    const input = await screen.findByPlaceholderText(/Karnataka/i);
     fireEvent.change(input, { target: { value: 'Karnataka' } });
     
     const searchButton = screen.getByRole('button', { name: /search for state/i });
@@ -360,12 +374,12 @@ describe('Security', () => {
 // ERROR BOUNDARY TESTS
 // ============================================
 describe('ErrorBoundary', () => {
-  test('error boundaries wrap critical sections', () => {
+  test('error boundaries wrap critical sections', async () => {
     render(<App />);
-    // If ErrorBoundary works correctly, these sections should render without issues
-    expect(screen.getByText(/Your Electoral Journey/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Your Electoral Journey/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /CivicSync Assistant/i })).toBeInTheDocument();
-    const pollingHeaders = screen.getAllByText(/Find Your Polling Booth/i);
+    // "Find Your Polling Booth" appears in both nav and section, use getAllByText
+    const pollingHeaders = screen.getAllByText(/Find.+Polling Booth/i);
     expect(pollingHeaders.length).toBeGreaterThanOrEqual(1);
   });
 });
@@ -374,11 +388,11 @@ describe('ErrorBoundary', () => {
 // INTEGRATION TESTS
 // ============================================
 describe('Integration: Timeline → Assistant', () => {
-  test('clicking timeline action dispatches custom event to assistant', () => {
+  test('clicking timeline action dispatches custom event to assistant', async () => {
     render(<App />);
     const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
     
-    const checkRequirementsBtn = screen.getByText(/Check Eligibility/i);
+    const checkRequirementsBtn = await screen.findByText(/Check Eligibility/i);
     fireEvent.click(checkRequirementsBtn);
     
     const dispatchedEvent = dispatchSpy.mock.calls.find(

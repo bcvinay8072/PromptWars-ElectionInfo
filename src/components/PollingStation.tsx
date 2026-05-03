@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Map, Search, MapPin, ExternalLink, Phone, Smartphone, Globe } from 'lucide-react';
+import { trackSearch } from '../lib/firebase';
 
 // India-specific election resources
 const ECI_RESOURCES = [
@@ -71,7 +72,7 @@ export const PollingStationVisualizer: React.FC = () => {
   const [isSearched, setIsSearched] = useState(false);
   const [matchedState, setMatchedState] = useState<{ name: string; url: string } | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     const query = searchQuery.trim().toLowerCase();
     if (!query) return;
@@ -83,7 +84,10 @@ export const PollingStationVisualizer: React.FC = () => {
       query.includes(key) || key.includes(query)
     );
     setMatchedState(found ? found[1] : null);
-  };
+
+    // Firebase Analytics: Track search event
+    trackSearch(query, !!found);
+  }, [searchQuery]);
 
   return (
     <div 
@@ -314,6 +318,27 @@ export const PollingStationVisualizer: React.FC = () => {
         <small style={{ color: 'var(--color-text-muted)' }}>
           Data sourced from Election Commission of India (ECI) • Voter Helpline: 1950
         </small>
+      </div>
+
+      {/* Google Maps Embed — ECI Headquarters, New Delhi */}
+      <div 
+        style={{ marginTop: 'var(--spacing-lg)', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--color-border)' }}
+        role="region"
+        aria-label="Election Commission of India headquarters location on Google Maps"
+      >
+        <iframe
+          title="Election Commission of India - Google Maps"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3502.1458024908!2d77.2167!3d28.6353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390cfd37b741d057%3A0xb8bfb8e3b76d2a2e!2sElection%20Commission%20of%20India!5e0!3m2!1sen!2sin!4v1677000000000!5m2!1sen!2sin"
+          width="100%"
+          height="250"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        ></iframe>
+        <div style={{ padding: 'var(--spacing-sm)', background: 'rgba(15, 23, 42, 0.8)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+          📍 Election Commission of India, Nirvachan Sadan, New Delhi — <a href="https://maps.google.com/?q=Election+Commission+of+India" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Open in Google Maps</a>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, ArrowRight, MapPin, FileText, Vote, UserCheck } from 'lucide-react';
+import { trackJourneyStep } from '../lib/firebase';
 
 const TIMELINE_STEPS = [
   {
@@ -45,15 +46,19 @@ const TIMELINE_STEPS = [
 export const VoterTimeline: React.FC = () => {
   const [activeStep, setActiveStep] = useState<number>(1);
 
-  const handleStepChange = (stepId: number) => {
+  const handleStepChange = useCallback((stepId: number) => {
     setActiveStep(stepId);
-  };
+    const step = TIMELINE_STEPS.find(s => s.id === stepId);
+    if (step) {
+      trackJourneyStep(stepId, step.title);
+    }
+  }, []);
 
-  const handleAskAssistant = (stepTitle: string) => {
+  const handleAskAssistant = useCallback((stepTitle: string) => {
     window.dispatchEvent(new CustomEvent('ask-assistant', { 
       detail: `Can you explain the requirements and details for ${stepTitle} in the Indian election process?` 
     }));
-  };
+  }, []);
 
   return (
     <div 

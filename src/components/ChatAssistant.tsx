@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { getElectionAssistantChat, sanitizeInput, rateLimiter } from '../lib/gemini';
+import { trackChatInteraction, saveChatToFirestore } from '../lib/firebase';
 import { Send, Loader2, Bot, User } from 'lucide-react';
 
+/** Represents a single chat message */
 interface Message {
   text: string;
   isUser: boolean;
@@ -9,10 +11,14 @@ interface Message {
   timestamp?: string;
 }
 
+/** Unique session ID for Firestore chat history tracking */
+const SESSION_ID = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
 /**
  * ChatAssistant component provides an AI-powered conversational interface
  * for election process guidance. Features streaming responses, input sanitization,
- * rate limiting, and full accessibility support.
+ * rate limiting, Firebase Analytics tracking, Firestore chat persistence,
+ * and full accessibility support.
  */
 export const ChatAssistant: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -45,6 +51,9 @@ export const ChatAssistant: React.FC = () => {
     scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
 
+  // Memoize the disabled state for the send button
+  const isSendDisabled = useMemo(() => !input.trim() || isLoading || !chatSession, [input, isLoading, chatSession]);
+
   const handleSend = useCallback(async (overrideMessage?: string) => {
     const rawMessage = overrideMessage || input.trim();
     if (!rawMessage || !chatSession) return;
@@ -74,6 +83,9 @@ export const ChatAssistant: React.FC = () => {
     setIsLoading(true);
     setMessageCount(prev => prev + 1);
 
+    // Firebase Analytics: Track chat interaction
+    trackChatInteraction(messageToSend.length, false);
+
     try {
       const result = await chatSession.sendMessageStream(messageToSend);
       
@@ -93,8 +105,16 @@ export const ChatAssistant: React.FC = () => {
           return newMessages;
         });
       }
+
+      // Firebase Firestore: Persist chat for analytics
+      saveChatToFirestore(messageToSend, fullText, SESSION_ID);
+
     } catch (error) {
       console.error("Chat error:", error);
+
+      // Firebase Analytics: Track error
+      trackChatInteraction(messageToSend.length, true);
+
       setMessages(prev => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = { 
@@ -119,12 +139,16 @@ export const ChatAssistant: React.FC = () => {
     return () => window.removeEventListener('ask-assistant', handleExternalQuery);
   }, [handleSend]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
-  };
+  }, [handleSend]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  }, []);
 
   return (
     <div 
@@ -274,7 +298,7 @@ export const ChatAssistant: React.FC = () => {
           ref={inputRef}
           type="text" 
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyPress}
           placeholder="Ask about elections, registration, or voting..." 
           disabled={isLoading || !chatSession}
@@ -297,7 +321,7 @@ export const ChatAssistant: React.FC = () => {
         </span>
         <button 
           onClick={() => handleSend()}
-          disabled={!input.trim() || isLoading || !chatSession}
+          disabled={isSendDisabled}
           aria-label="Send message"
           title="Send message"
           style={{ 
