@@ -29,17 +29,40 @@ jest.mock('./lib/gemini', () => ({
   },
 }));
 
-// Mock Firebase module for test environment
+// Mock Firebase module for test environment (covers all Firebase services)
 jest.mock('./lib/firebase', () => ({
+  // Analytics
   trackEvent: jest.fn(),
   trackPageView: jest.fn(),
   trackChatInteraction: jest.fn(),
   trackSearch: jest.fn(),
   trackJourneyStep: jest.fn(),
+  // Firestore
   saveChatToFirestore: jest.fn().mockResolvedValue(undefined),
+  // Auth (Google Sign-In)
+  signInWithGoogle: jest.fn().mockResolvedValue(null),
+  signOut: jest.fn().mockResolvedValue(undefined),
+  onAuthChange: jest.fn((_cb: any) => { return () => {}; }),
+  // Performance Monitoring
+  startPerformanceTrace: jest.fn(() => ({ stop: jest.fn() })),
+  // Remote Config
+  getConfigValue: jest.fn(() => ''),
+  getConfigNumber: jest.fn(() => 0),
+  // Cloud Messaging
+  registerForPushNotifications: jest.fn().mockResolvedValue(null),
+  // Instances
   app: {},
   analytics: null,
   db: {},
+  auth: {},
+  performance: null,
+  remoteConfig: null,
+  messaging: null,
+}));
+
+// Mock the GoogleSignIn component to avoid Firebase Auth state issues in tests
+jest.mock('./components/GoogleSignIn', () => ({
+  GoogleSignIn: () => <button aria-label="Sign in with Google">Sign in with Google</button>,
 }));
 
 // Mock the Civic API module (still exists in codebase for Google Services score)

@@ -4,8 +4,11 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-// Initialize Firebase services (Analytics, Firestore)
+// Initialize Firebase services (Analytics, Firestore, Auth, Performance, Remote Config, FCM)
 import './lib/firebase';
+
+// Register PWA service worker for offline support and caching
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -16,10 +19,14 @@ root.render(
   </React.StrictMode>
 );
 
-// Report web vitals to Google Analytics for performance monitoring
-// Uses the Firebase/GA4 integration for centralized telemetry
+// Register service worker for Progressive Web App (PWA) functionality
+serviceWorkerRegistration.register({
+  onSuccess: () => console.log('CivicSync is ready for offline use.'),
+  onUpdate: () => console.log('CivicSync update available. Refresh to update.'),
+});
+
+// Report Web Vitals to Google Analytics 4 for performance monitoring
 reportWebVitals((metric) => {
-  // Send Core Web Vitals to Google Analytics 4
   if (typeof window !== 'undefined' && (window as any).gtag) {
     (window as any).gtag('event', metric.name, {
       value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),

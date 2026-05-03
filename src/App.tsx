@@ -1,7 +1,8 @@
 import React, { lazy, Suspense, useEffect, useMemo } from 'react';
 import './index.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { trackPageView } from './lib/firebase';
+import { GoogleSignIn } from './components/GoogleSignIn';
+import { trackPageView, getConfigValue } from './lib/firebase';
 
 // Lazy-load heavy components for better initial load performance
 const ChatAssistant = lazy(() => import('./components/ChatAssistant').then(m => ({ default: m.ChatAssistant })));
@@ -74,6 +75,8 @@ function App() {
             aria-label="Translate this page"
             style={{ minWidth: '120px' }}
           ></div>
+          {/* Firebase Authentication — Google Sign-In */}
+          <GoogleSignIn />
           <nav aria-label="Main navigation">
             <ul style={{ display: 'flex', gap: 'var(--spacing-md)', listStyle: 'none' }}>
               {NAV_LINKS.map((link) => (

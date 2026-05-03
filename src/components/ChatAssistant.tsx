@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { getElectionAssistantChat, sanitizeInput, rateLimiter } from '../lib/gemini';
-import { trackChatInteraction, saveChatToFirestore } from '../lib/firebase';
+import { trackChatInteraction, saveChatToFirestore, startPerformanceTrace } from '../lib/firebase';
 import { Send, Loader2, Bot, User } from 'lucide-react';
 
 /** Represents a single chat message */
@@ -87,6 +87,9 @@ export const ChatAssistant: React.FC = () => {
     trackChatInteraction(messageToSend.length, false);
 
     try {
+      // Firebase Performance: Start trace for chat response time
+      const chatTrace = startPerformanceTrace('chat_response_time');
+
       const result = await chatSession.sendMessageStream(messageToSend);
       
       let fullText = "";
@@ -105,6 +108,9 @@ export const ChatAssistant: React.FC = () => {
           return newMessages;
         });
       }
+
+      // Firebase Performance: Stop trace
+      chatTrace.stop();
 
       // Firebase Firestore: Persist chat for analytics
       saveChatToFirestore(messageToSend, fullText, SESSION_ID);
