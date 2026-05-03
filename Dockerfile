@@ -8,8 +8,9 @@ RUN npm install
 
 # Copy source code and build the app
 COPY . .
-ARG REACT_APP_GEMINI_API_KEY
-RUN REACT_APP_GEMINI_API_KEY=${REACT_APP_GEMINI_API_KEY} npm run build
+# React CRA automatically reads .env.production during build
+# The file is uploaded via .gcloudignore but excluded from git
+RUN if [ -f .env.production ]; then echo "Found .env.production"; fi && npm run build
 
 # Production stage
 FROM nginx:alpine
